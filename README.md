@@ -1,1 +1,1 @@
-# Java_JFrame_Exercises
+Java Practice Exercises to learn how to use JFrame
