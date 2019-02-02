@@ -14,22 +14,19 @@ import java.awt.event.KeyListener;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean play = false;
+    private boolean gamePaused = false;
     private int score = 0;
     private int totalBricks = 21;
 
     private Timer timer;
     private int delay = 8;
 
-    private int playerX = 310;
-
-    private int ballPosX = 120;
-    private int ballPosY = 350;
-    private int ballXdir = -1;
-    private int ballYdir = -2;
+    private int playerX, ballPosX, ballPosY, ballXdir, ballYdir, playerMovementSpeed;
 
     private MapGenerator map;
 
     public Gameplay() {
+        startLevelPosition();
         map = new MapGenerator(3, 7);
         addKeyListener(this);
         setFocusable(true);
@@ -89,6 +86,15 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             g.drawString("Press Enter to Restart", 230, 350);
         }
 
+        if (gamePaused) {
+            g.setColor(Color.red);
+            g.setFont(new Font("serif", Font.BOLD, 30));
+            g.drawString("Game Paused", 240, 300);
+
+            g.setFont(new Font("serif", Font.BOLD, 20));
+            g.drawString("Press Enter to Resume", 230, 350);
+        }
+
         g.dispose();
 
     }
@@ -131,9 +137,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 }
             }
 
-            ballPosX += ballXdir;
-            ballPosY += ballYdir;
-
+            if (!gamePaused) {  // Ball only moves when game isn't paused
+                ballPosX += ballXdir;
+                ballPosY += ballYdir;
+            }
             if (ballPosX < 0) {     // Left border
                 ballXdir = -ballXdir;
             }
@@ -156,46 +163,57 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-            if (playerX >= 586) {
-                playerX = 586;
+        if (!gamePaused) { // Disabled player movement when game is paused
+            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                if (playerX >= 586) {
+                    playerX = 586;
+                }
+                else {
+                    moveRight();
+                }
             }
-            else {
-                moveRight();
-            }
-        }
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-            if (playerX <= 10) {
-                playerX = 10;
-            }
-            else {
-                moveLeft();
+            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                if (playerX <= 10) {
+                    playerX = 10;
+                }
+                else {
+                    moveLeft();
+                }
             }
         }
 
-        if (e.getKeyCode() == KeyEvent.VK_ENTER && !play) {
-            play = true;
-            ballPosX = 120;
-            ballPosY = 350;
-            ballXdir = -1;
-            ballYdir = -2;
-            playerX = 310;
-            score = 0;
-            totalBricks = 21;
-            map = new MapGenerator(3, 7);
-
-            repaint();
+        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+            if (!play) {
+                play = true;
+                startLevelPosition();
+                score = 0;
+                totalBricks = 21;
+                map = new MapGenerator(3, 7);
+                repaint();
+            }
+            else if (play) {
+                gamePaused = !gamePaused;   //Toggle game paused
+            }
         }
     }
 
     public void moveRight() {
         play = true;
-        playerX += 20;
+        playerX += playerMovementSpeed;
     }
 
     public void moveLeft() {
         play = true;
-        playerX -= 20;
+        playerX -= playerMovementSpeed;
+    }
+
+    public void startLevelPosition() {
+        ballPosX = 120;
+        ballPosY = 350;
+        ballXdir = -3;
+        ballYdir = -1;
+        playerX = 310;
+        playerMovementSpeed = 20;
     }
 
 }
