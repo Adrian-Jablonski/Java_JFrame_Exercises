@@ -1,1 +1,1 @@
-Java Practice Exercises to learn how to use JFrame
+Java Practice Exercises and Projects to learn how to use JFrame
