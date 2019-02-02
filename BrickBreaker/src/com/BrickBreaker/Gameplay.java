@@ -21,7 +21,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private Timer timer;
     private int delay = 8;
 
-    private int playerX, ballPosX, ballPosY, ballXdir, ballYdir, playerMovementSpeed;
+    private int playerX, ballPosX, ballPosY, ballXdir, ballYdir, playerMovementSpeed, paddleWidth;
 
     private MapGenerator map;
 
@@ -56,7 +56,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
         // the paddle
         g.setColor(Color.green);
-        g.fillRect(playerX, 550, 100, 8);
+        g.fillRect(playerX, 550, paddleWidth, 8);
 
         // the ball
         g.setColor(Color.yellow);
@@ -105,8 +105,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         Rectangle ballRect = new Rectangle(ballPosX, ballPosY, 20, 20);
 
         if (play) {
-            if (ballRect.intersects(new Rectangle(playerX, 550, 100, 8))) {
+            if (ballRect.intersects(new Rectangle(playerX, 550, paddleWidth, 8))) {
                 ballYdir = -ballYdir;
+                deflectionAngle();
+
             } // Checks for collision between ball and paddle
 
             A: for (int i = 0; i <map.map.length; i++) {   // Detecting collision with brick
@@ -210,10 +212,30 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     public void startLevelPosition() {
         ballPosX = 120;
         ballPosY = 350;
-        ballXdir = -3;
-        ballYdir = -1;
+        ballXdir = -1;
+        ballYdir = -2;
         playerX = 310;
-        playerMovementSpeed = 20;
+        playerMovementSpeed = 10;
+        paddleWidth = 100;
     }
 
+    public void deflectionAngle() {     // Deflection angle off the paddle
+        System.out.println("PlayerX :" + playerX + " BallX: " + ballPosX);
+        int paddleCenter = playerX + (paddleWidth /2);
+        int paddleTenths = paddleWidth / 10;
+        int directionX = 1;
+        if (ballXdir < 0) {
+            directionX = -1;
+        }
+
+        for (var i = 1; i <= 5; i++) {
+            int lowerLimit = paddleCenter - (paddleTenths * i);
+            int upperLimit = paddleCenter + (paddleTenths * i);
+            System.out.println("Lower: " + lowerLimit + " Higher: " + upperLimit);
+            if (ballPosX >= lowerLimit && ballPosX <= upperLimit) {
+                ballXdir = directionX * (i - 1);
+                break;
+            }
+        }
+    }
 }
