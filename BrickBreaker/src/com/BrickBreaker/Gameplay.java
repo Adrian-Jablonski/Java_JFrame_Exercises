@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean play = false;
@@ -24,6 +26,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private int playerX, ballPosX, ballPosY, ballXdir, ballYdir, playerMovementSpeed, paddleWidth;
 
     private MapGenerator map;
+
+    private List<PowerUps> powerUpList = new ArrayList<>();
+    private int powerUpListSize;
 
     public Gameplay() {
         startLevelPosition();
@@ -95,6 +100,21 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             g.drawString("Press Enter to Resume", 230, 350);
         }
 
+        powerUpListSize = powerUpList.size();
+        if (powerUpListSize > 0 && !gamePaused ) {
+            for (int i = 0; i < powerUpListSize; i++) {
+                PowerUps powerUp = powerUpList.get(i);
+
+                if (play) {
+                    powerUp.setPowerUpPosY();
+
+                    g.setColor(Color.blue);
+                    g.setFont(new Font("serif", Font.BOLD, 16));
+                    g.drawString(powerUp.getPowerUpName(), powerUp.getPowerUpPosX(), powerUp.getPowerUpPosY());
+                }
+            }
+        }
+
         g.dispose();
 
     }
@@ -103,10 +123,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     public void actionPerformed(ActionEvent e) {
         timer.start();  // Starts time automatically. Do not need to call method
         Rectangle ballRect = new Rectangle(ballPosX, ballPosY, 20, 20);
+        Rectangle paddleRect = new Rectangle(playerX, 550, paddleWidth, 8);
 
         if (play) {
-            if (ballRect.intersects(new Rectangle(playerX, 550, paddleWidth, 8))) {
-                ballYdir = -ballYdir;
+            if (ballRect.intersects(paddleRect)) {
+                ballYdir = -Math.abs(ballYdir);     //Math.abs prevents ball getting stuck on paddle bug
                 deflectionAngle();
 
             } // Checks for collision between ball and paddle
@@ -122,8 +143,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                         Rectangle brickRect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
 
                         if (ballRect.intersects(brickRect)) {
-                            map.setBrickValue(0, i, j);
-                            totalBricks--;
+                            map.setBrickValue(i, j);
                             score += 5;
 
                             if (ballPosX + 19 <= brickRect.x || ballPosX + 1 >= brickRect.x + brickRect.width) {    // Moves ball away from intersected brick
@@ -132,10 +152,38 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                                 ballYdir = -ballYdir;
                             }
 
+                            if (map.getBrickValue(i, j) <= 0) {
+                                totalBricks--;
+                                String powerUpName = map.powerUpArray[i * map.col + j];
+                                if (!powerUpName.equals("None")) {
+                                    powerUpList.add(new PowerUps(brickX, brickY, powerUpName));       //Adds new falling power up to screen
+                                }
+                            }
+
                             break A;    // Breaks out of outer loop
                         }
 
                     }
+                }
+            }
+
+            if (powerUpListSize > 0) { // detecting pad collision with powerup
+                for (int i = 0; i < powerUpListSize; i++) {
+                    try {
+                        PowerUps powerUp = powerUpList.get(i);
+                        Rectangle powerUpRect = new Rectangle(powerUp.getPowerUpPosX(), powerUp.getPowerUpPosY(), 4, 16);
+                        if (powerUpRect.intersects(paddleRect) && play) {
+                            removePowerUp(i);
+                            activatePowerUp(powerUp.getPowerUpName());
+                        }
+                        if (powerUp.getPowerUpPosY() > 570) {   // If player misses powerup
+                            removePowerUp(i);
+                        }
+                    }
+                    catch(IndexOutOfBoundsException exception) {
+                        System.out.println("Index Out of Bounds");
+                    }
+
                 }
             }
 
@@ -167,8 +215,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     public void keyPressed(KeyEvent e) {
         if (!gamePaused) { // Disabled player movement when game is paused
             if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                if (playerX >= 586) {
-                    playerX = 586;
+                if (playerX >= 546 + (paddleWidth / 2)) {
+                    playerX = 546 + (paddleWidth / 2);
                 }
                 else {
                     moveRight();
@@ -210,17 +258,26 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     }
 
     public void startLevelPosition() {
-        ballPosX = 120;
-        ballPosY = 350;
-        ballXdir = -1;
-        ballYdir = -2;
+        ballPosX = 250;
+        ballPosY = 450;
+        ballXdir = -2;
+        ballYdir = -3;
         playerX = 310;
         playerMovementSpeed = 10;
         paddleWidth = 100;
+
+        powerUpListSize = powerUpList.size();
+        if (powerUpListSize > 0 && !gamePaused ) {
+            for (int i = 0; i < powerUpListSize; i++) {
+                PowerUps powerUp = powerUpList.get(i);
+                    powerUp.removePowerUp();
+
+            }
+        }
     }
 
     public void deflectionAngle() {     // Deflection angle off the paddle
-        System.out.println("PlayerX :" + playerX + " BallX: " + ballPosX);
+//        System.out.println("PlayerX :" + playerX + " BallX: " + ballPosX);
         int paddleCenter = playerX + (paddleWidth /2);
         int paddleTenths = paddleWidth / 10;
         int directionX = 1;
@@ -228,14 +285,45 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             directionX = -1;
         }
 
-        for (var i = 1; i <= 5; i++) {
+        for (var i = 1; i <= 6; i++) {
             int lowerLimit = paddleCenter - (paddleTenths * i);
             int upperLimit = paddleCenter + (paddleTenths * i);
-            System.out.println("Lower: " + lowerLimit + " Higher: " + upperLimit);
+//            System.out.println("Lower: " + lowerLimit + " Higher: " + upperLimit);
             if (ballPosX >= lowerLimit && ballPosX <= upperLimit) {
                 ballXdir = directionX * (i - 1);
                 break;
             }
+        }
+    }
+
+    public void removePowerUp(int i) {
+        powerUpListSize -= 1;
+        powerUpList.remove(i);
+    }
+
+    public void activatePowerUp(String powerUp) {
+        int yDir;
+        switch (powerUp) {
+            case "LP":  // Long Pad
+                paddleWidth = 150;
+                break;
+            case "SP":  // Short Pad
+                paddleWidth = 50;
+                break;
+            case "FB":  // Fast Ball
+                yDir = 1;
+                if (ballYdir < 0) {
+                    yDir = -1;
+                }
+                ballYdir = 5 * yDir;
+                break;
+            case "SB":  // Slow Ball
+                yDir = 1;
+                if (ballYdir < 0) {
+                    yDir = -1;
+                }
+                ballYdir = 2 * yDir;
+                break;
         }
     }
 }

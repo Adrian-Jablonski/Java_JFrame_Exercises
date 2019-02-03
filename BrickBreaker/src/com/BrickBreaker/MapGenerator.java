@@ -6,10 +6,18 @@ import java.awt.Graphics2D;
 
 public class MapGenerator {
     public int map[][];
+    public String powerUps[];    // Insert Power ups into this array
     public int brickWidth;
     public int brickHeight;
+    public String[] powerUpArray;
+    public int row, col;
 
     public MapGenerator(int row, int col) {
+        this.row = row;
+        this.col = col;
+        powerUpArray = new String[row * col];
+        powerUpArray = shufflePowerUpArray(row, col);
+
         map = new int[row][col];
         for (int i = 0; i < map.length; i++) {
             for(int j = 0; j < map[0].length; j++) {
@@ -36,7 +44,24 @@ public class MapGenerator {
         }
     }
 
-    public void setBrickValue(int value, int row, int col) {
-        map[row][col] = value;
+    public void setBrickValue(int row, int col) {
+        map[row][col] -= 1;
+    }
+
+    public int getBrickValue(int row, int col) {
+        return map[row][col];
+    }
+
+    public String[] shufflePowerUpArray(int row, int col) {
+        String[] powerUps = {"LP", "SP", "FB", "None", "None", "None", "None", "SB", "None", "None", "None", "None", "FB", "SP", "None", "None", "None", "None"};
+
+        int powerUpsLen = powerUps.length;
+        int powerUpArrayLen = row * col;
+
+        for (int i = 0; i < powerUpArrayLen; i++) {
+            int random = (int)(Math.random() * powerUpsLen);
+            powerUpArray[i] = powerUps[random];
+        }
+        return powerUpArray;
     }
 }
