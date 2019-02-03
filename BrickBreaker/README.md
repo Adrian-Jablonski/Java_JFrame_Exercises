@@ -1,6 +1,7 @@
 # Brick Breaker Game
 
-## Description : This is my first Java project using JFrame. I used the following tutorial https://www.youtube.com/watch?v=K9qMm3JbOH0 as a guide to start my project. The tutorial set up a basic version of the game to work with the following features;
+### Description : This is my first Java project using JFrame. I used the following tutorial https://www.youtube.com/watch?v=K9qMm3JbOH0 as a guide to start my project.
+## Original Features:
 - Generate the bricks, ball, and paddle for the game
 - Ball collision detection with paddle and brick
 - Play again after winning and restart feature on losing
