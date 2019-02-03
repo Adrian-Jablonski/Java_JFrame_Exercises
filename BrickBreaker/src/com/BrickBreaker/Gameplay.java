@@ -12,27 +12,29 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean play = false;
     private boolean gamePaused = false;
     private int score = 0;
-    private int totalBricks = 21;
+    private int totalBricks = 54;
 
     private Timer timer;
     private int delay = 8;
 
-    private int playerX, ballPosX, ballPosY, ballXdir, ballYdir, playerMovementSpeed, paddleWidth;
+    private int playerX, playerMovementSpeed, paddleWidth;
 
     private MapGenerator map;
 
     private List<PowerUps> powerUpList = new ArrayList<>();
+    private List<Ball> ballList = new ArrayList<>();
     private int powerUpListSize;
 
     public Gameplay() {
         startLevelPosition();
-        map = new MapGenerator(3, 7);
+        map = new MapGenerator(6, 9);
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
@@ -64,28 +66,45 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         g.fillRect(playerX, 550, paddleWidth, 8);
 
         // the ball
-        g.setColor(Color.yellow);
-        g.fillOval(ballPosX, ballPosY, 20, 20);
+        try {
+            ballList.forEach((ball) -> {
+                if (ball.getBallColor() == "Orange") {
+                    g.setColor(Color.orange);
+                }
+                else {
+                    g.setColor(Color.yellow);
+                }
+                g.fillOval(ball.getBallPosX(), ball.getBallPosY(), 20, 20);
+
+                if (ball.getBallPosY() > 570) {    // If player missed the ball
+                    Ball.ballCount -= 1;
+                    ballList.remove(ball);
+
+                    if (Ball.ballCount <= 0) {
+                        play = false;
+                        ball.setBallXdir(0);
+                        ball.setBallYdir(0);
+                        g.setColor(Color.red);
+                        g.setFont(new Font("serif", Font.BOLD, 30));
+                        g.drawString("Game Over, Score", 190, 300);
+
+                        g.setFont(new Font("serif", Font.BOLD, 20));
+                        g.drawString("Press Enter to Restart", 230, 350);
+                    }
+                }
+            });
+
+        } catch(Exception ConcurrentModificationException) {
+            System.out.println("Error");
+        }
 
         if (totalBricks <= 0) {     // If player won level
             play = false;
-            ballXdir = 0;
-            ballYdir = 0;
+//            ballXdir = 0;
+//            ballYdir = 0;
             g.setColor(Color.red);
             g.setFont(new Font("serif", Font.BOLD, 30));
             g.drawString("You Won: " + score, 260, 300);
-
-            g.setFont(new Font("serif", Font.BOLD, 20));
-            g.drawString("Press Enter to Restart", 230, 350);
-        }
-
-        if(ballPosY > 570) {    // If player missed the ball
-            play = false;
-            ballXdir = 0;
-            ballYdir = 0;
-            g.setColor(Color.red);
-            g.setFont(new Font("serif", Font.BOLD, 30));
-            g.drawString("Game Over, Score", 190, 300);
 
             g.setFont(new Font("serif", Font.BOLD, 20));
             g.drawString("Press Enter to Restart", 230, 350);
@@ -122,87 +141,91 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         timer.start();  // Starts time automatically. Do not need to call method
-        Rectangle ballRect = new Rectangle(ballPosX, ballPosY, 20, 20);
-        Rectangle paddleRect = new Rectangle(playerX, 550, paddleWidth, 8);
+        try {
+            ballList.forEach((ball) -> {
+                Rectangle ballRect = new Rectangle(ball.getBallPosX(), ball.getBallPosY(), 20, 20);
+                Rectangle paddleRect = new Rectangle(playerX, 550, paddleWidth, 8);
 
-        if (play) {
-            if (ballRect.intersects(paddleRect)) {
-                ballYdir = -Math.abs(ballYdir);     //Math.abs prevents ball getting stuck on paddle bug
-                deflectionAngle();
+                if (play) {
+                    if (ballRect.intersects(paddleRect)) {
+                        ball.setBallYdir(-Math.abs(ball.getBallYdir()));  //Math.abs prevents ball getting stuck on paddle bug
+                        deflectionAngle(ball);
 
-            } // Checks for collision between ball and paddle
+                    } // Checks for collision between ball and paddle
 
-            A: for (int i = 0; i <map.map.length; i++) {   // Detecting collision with brick
-                for (int j = 0; j < map.map[0].length; j++) {
-                    if (map.map[i][j] > 0) {
-                        int brickX = j * map.brickWidth + 80;
-                        int brickY = i * map.brickHeight + 50;
-                        int brickWidth = map.brickWidth;
-                        int brickHeight = map.brickHeight;
+                    A:
+                    for (int i = 0; i < map.map.length; i++) {   // Detecting collision with brick
+                        for (int j = 0; j < map.map[0].length; j++) {
+                            if (map.map[i][j] > 0) {
+                                int brickX = j * map.brickWidth + 10;
+                                int brickY = i * map.brickHeight + 50;
+                                int brickWidth = map.brickWidth;
+                                int brickHeight = map.brickHeight;
 
-                        Rectangle brickRect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
+                                Rectangle brickRect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
 
-                        if (ballRect.intersects(brickRect)) {
-                            map.setBrickValue(i, j);
-                            score += 5;
+                                if (ballRect.intersects(brickRect)) {
+                                    map.setBrickValue(i, j);
+                                    score += 5;
 
-                            if (ballPosX + 19 <= brickRect.x || ballPosX + 1 >= brickRect.x + brickRect.width) {    // Moves ball away from intersected brick
-                                ballXdir = -ballXdir;
-                            } else {
-                                ballYdir = -ballYdir;
-                            }
+                                    if (!ball.getFireBall()) {
+                                        if (ball.getBallPosX() + 19 <= brickRect.x || ball.getBallPosX() + 1 >= brickRect.x + brickRect.width) {    // Moves ball away from intersected brick
+                                            ball.setBallXdir(-ball.getBallXdir());
+                                        } else {
+                                            ball.setBallYdir(-ball.getBallYdir());
+                                        }
+                                    }
 
-                            if (map.getBrickValue(i, j) <= 0) {
-                                totalBricks--;
-                                String powerUpName = map.powerUpArray[i * map.col + j];
-                                if (!powerUpName.equals("None")) {
-                                    powerUpList.add(new PowerUps(brickX, brickY, powerUpName));       //Adds new falling power up to screen
+                                    if (map.getBrickValue(i, j) <= 0) {
+                                        totalBricks--;
+                                        String powerUpName = map.powerUpArray[i * map.col + j];
+                                        if (!powerUpName.equals("None")) {
+                                            powerUpList.add(new PowerUps(brickX, brickY, powerUpName));       //Adds new falling power up to screen
+                                        }
+                                    }
+
+                                    break A;    // Breaks out of outer loop
                                 }
+
+                            }
+                        }
+                    }
+
+                    if (powerUpListSize > 0) { // detecting pad collision with powerup
+                        for (int i = 0; i < powerUpListSize; i++) {
+                            try {
+                                PowerUps powerUp = powerUpList.get(i);
+                                Rectangle powerUpRect = new Rectangle(powerUp.getPowerUpPosX(), powerUp.getPowerUpPosY(), 4, 16);
+                                if (powerUpRect.intersects(paddleRect) && play) {
+                                    removePowerUp(i);
+                                    activatePowerUp(powerUp.getPowerUpName());
+                                }
+                                if (powerUp.getPowerUpPosY() > 570) {   // If player misses powerup
+                                    removePowerUp(i);
+                                }
+                            } catch (IndexOutOfBoundsException exception) {
+                                System.out.println("Index Out of Bounds");
                             }
 
-                            break A;    // Breaks out of outer loop
                         }
+                    }
 
+                    if (!gamePaused) {  // Ball only moves when game isn't paused
+                        ball.setBallPosX(ball.getBallPosX() + ball.getBallXdir());
+                        ball.setBallPosY(ball.getBallPosY() + ball.getBallYdir());
+                    }
+                    if (ball.getBallPosX() < 0 || ball.getBallPosX() > 670) {     // Left border Or Right Border
+                        ball.setBallXdir(-ball.getBallXdir());
+                    }
+                    if (ball.getBallPosY() < 0) {     // Top Border
+                        ball.setBallYdir(-ball.getBallYdir());
                     }
                 }
-            }
-
-            if (powerUpListSize > 0) { // detecting pad collision with powerup
-                for (int i = 0; i < powerUpListSize; i++) {
-                    try {
-                        PowerUps powerUp = powerUpList.get(i);
-                        Rectangle powerUpRect = new Rectangle(powerUp.getPowerUpPosX(), powerUp.getPowerUpPosY(), 4, 16);
-                        if (powerUpRect.intersects(paddleRect) && play) {
-                            removePowerUp(i);
-                            activatePowerUp(powerUp.getPowerUpName());
-                        }
-                        if (powerUp.getPowerUpPosY() > 570) {   // If player misses powerup
-                            removePowerUp(i);
-                        }
-                    }
-                    catch(IndexOutOfBoundsException exception) {
-                        System.out.println("Index Out of Bounds");
-                    }
-
-                }
-            }
-
-            if (!gamePaused) {  // Ball only moves when game isn't paused
-                ballPosX += ballXdir;
-                ballPosY += ballYdir;
-            }
-            if (ballPosX < 0) {     // Left border
-                ballXdir = -ballXdir;
-            }
-            if (ballPosY < 0) {     // Top Border
-                ballYdir = -ballYdir;
-            }
-            if (ballPosX > 670) {     // Right Border
-                ballXdir = -ballXdir;
-            }
+                repaint();  // Repaints screen on any changes
+            });
+        } catch(Exception ConcurrentModificationException) {
+            System.out.println("Error");
         }
-
-        repaint();  // Repaints screen on any changes
     }
 
     @Override
@@ -233,12 +256,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         }
 
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+            System.out.println("Enter pressed. Play: " + play);
             if (!play) {
                 play = true;
                 startLevelPosition();
                 score = 0;
-                totalBricks = 21;
-                map = new MapGenerator(3, 7);
+                totalBricks = 54;
+                map = new MapGenerator(6, 9);
                 repaint();
             }
             else if (play) {
@@ -258,10 +282,15 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     }
 
     public void startLevelPosition() {
-        ballPosX = 250;
-        ballPosY = 450;
-        ballXdir = -2;
-        ballYdir = -3;
+        Ball.ballCount = 0;
+        ballList.clear();
+        ballList.add(new Ball(250, 450, -2, -3));
+
+//        ballPosX = 250;
+//        ballPosY = 450;
+//        ballXdir = -2;
+//        ballYdir = -3;
+
         playerX = 310;
         playerMovementSpeed = 10;
         paddleWidth = 100;
@@ -276,12 +305,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         }
     }
 
-    public void deflectionAngle() {     // Deflection angle off the paddle
-//        System.out.println("PlayerX :" + playerX + " BallX: " + ballPosX);
+    public void deflectionAngle(Ball ball) {     // Deflection angle off the paddle
         int paddleCenter = playerX + (paddleWidth /2);
         int paddleTenths = paddleWidth / 10;
+
         int directionX = 1;
-        if (ballXdir < 0) {
+        if (ball.getBallXdir() < 0) {
             directionX = -1;
         }
 
@@ -289,8 +318,19 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             int lowerLimit = paddleCenter - (paddleTenths * i);
             int upperLimit = paddleCenter + (paddleTenths * i);
 //            System.out.println("Lower: " + lowerLimit + " Higher: " + upperLimit);
-            if (ballPosX >= lowerLimit && ballPosX <= upperLimit) {
-                ballXdir = directionX * (i - 1);
+            if (i >= 4) {
+                if (ball.getBallPosX() >= lowerLimit && ball.getBallPosX() <= paddleCenter) {
+                    ball.setBallXdir(-1 * (i - 1));
+                    break;
+                }
+                else if (ball.getBallPosX() >= paddleCenter && ball.getBallPosX() <= upperLimit) {
+                    ball.setBallXdir(1 * (i - 1));
+                    break;
+                }
+            }
+
+            if (ball.getBallPosX() >= lowerLimit && ball.getBallPosX() <= upperLimit) {
+                ball.setBallXdir(directionX * (i - 1));
                 break;
             }
         }
@@ -302,7 +342,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     }
 
     public void activatePowerUp(String powerUp) {
-        int yDir;
         switch (powerUp) {
             case "LP":  // Long Pad
                 paddleWidth = 150;
@@ -310,19 +349,41 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             case "SP":  // Short Pad
                 paddleWidth = 50;
                 break;
-            case "FB":  // Fast Ball
-                yDir = 1;
-                if (ballYdir < 0) {
-                    yDir = -1;
-                }
-                ballYdir = 5 * yDir;
+            case "QB":  // Quick Ball
+                ballList.forEach((ball) -> {
+                    if (ball.getBallYdir() < 0) {
+                        ball.setBallYdir(-5);
+                    }
+                    else {
+                        ball.setBallYdir(5);
+                    }
+                });
                 break;
             case "SB":  // Slow Ball
-                yDir = 1;
-                if (ballYdir < 0) {
-                    yDir = -1;
+                ballList.forEach((ball) -> {
+                    if (ball.getBallYdir() < 0) {
+                        ball.setBallYdir(-2);
+                    }
+                    else {
+                        ball.setBallYdir(2);
+                    }
+                });
+                break;
+            case "TB":  // Triple Ball
+                Ball ballToClone = ballList.get(0);
+                ballList.add(new Ball(ballToClone.getBallPosX(), ballToClone.getBallPosY(), -ballToClone.getBallXdir(), ballToClone.getBallYdir()));
+                ballList.add(new Ball(ballToClone.getBallPosX(), ballToClone.getBallPosY(), ballToClone.getBallXdir(), -ballToClone.getBallYdir()));
+                break;
+            case "FB":  // Fire Ball
+                for (Ball ball : ballList) {
+                    if (!ball.getFireBall()) {
+                        ball.setFireBall(true);
+                        ball.setBallColor("Orange");
+                        break;
+                    }
                 }
-                ballYdir = 2 * yDir;
+                break;
+            default:
                 break;
         }
     }
