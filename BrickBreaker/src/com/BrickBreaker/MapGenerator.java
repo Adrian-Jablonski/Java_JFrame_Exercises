@@ -52,8 +52,8 @@ public class MapGenerator {
     }
 
     public String[] shufflePowerUpArray(int row, int col) {
-//        String[] powerUps = {"None", "LP", "SP", "QB", "None", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB"};
-        String[] powerUps = {"None", "TB", "TB", "FB", "FB"};
+//        String[] powerUps = {"None", "LP", "SP", "QB", "NP", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB", "None", "None"};
+        String[] powerUps = {"None", "TB", "TB", "LZ", "LZ"};
 
         int powerUpsLen = powerUps.length;
         int powerUpArrayLen = row * col;

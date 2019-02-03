@@ -12,7 +12,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
 import java.util.List;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
@@ -24,13 +23,17 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private Timer timer;
     private int delay = 8;
 
-    private int playerX, playerMovementSpeed, paddleWidth;
+    private Paddle paddle;
 
     private MapGenerator map;
 
     private List<PowerUps> powerUpList = new ArrayList<>();
     private List<Ball> ballList = new ArrayList<>();
     private int powerUpListSize;
+    private boolean holdingSpace = false;
+
+    private boolean laserFired = false;
+    private int laserX, laserY;
 
     public Gameplay() {
         startLevelPosition();
@@ -62,8 +65,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         g.drawString(""+score, 590, 30);
 
         // the paddle
-        g.setColor(Color.green);
-        g.fillRect(playerX, 550, paddleWidth, 8);
+        if (paddle.getPaddleColor() == "Orange") {
+            g.setColor(Color.orange);
+        }
+        else {
+            g.setColor(Color.green);
+        }
+        g.fillRect(paddle.getPaddleX(), paddle.getPaddleY(), paddle.getWidth(), 8);
 
         // the ball
         try {
@@ -72,7 +80,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                     g.setColor(Color.orange);
                 }
                 else {
-                    g.setColor(Color.yellow);
+                    g.setColor(Color.white);
                 }
                 g.fillOval(ball.getBallPosX(), ball.getBallPosY(), 20, 20);
 
@@ -95,13 +103,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             });
 
         } catch(Exception ConcurrentModificationException) {
-            System.out.println("Error");
+//            System.out.println("Error");
         }
 
         if (totalBricks <= 0) {     // If player won level
             play = false;
-//            ballXdir = 0;
-//            ballYdir = 0;
             g.setColor(Color.red);
             g.setFont(new Font("serif", Font.BOLD, 30));
             g.drawString("You Won: " + score, 260, 300);
@@ -134,6 +140,15 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             }
         }
 
+        if (laserFired && !gamePaused && play) {
+            g.setColor(Color.red);
+            g.fillRect(laserX, laserY, 10, 10);
+            laserY -= 2;
+            if (laserY < 0) {
+                laserFired = false;
+            }
+        }
+
         g.dispose();
 
     }
@@ -144,8 +159,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         try {
             ballList.forEach((ball) -> {
                 Rectangle ballRect = new Rectangle(ball.getBallPosX(), ball.getBallPosY(), 20, 20);
-                Rectangle paddleRect = new Rectangle(playerX, 550, paddleWidth, 8);
-
+                Rectangle paddleRect = new Rectangle(paddle.getPaddleX(), 550, paddle.getWidth(), 8);
+                Rectangle laserRect = new Rectangle(laserX, laserY,10, 10);
                 if (play) {
                     if (ballRect.intersects(paddleRect)) {
                         ball.setBallYdir(-Math.abs(ball.getBallYdir()));  //Math.abs prevents ball getting stuck on paddle bug
@@ -164,16 +179,19 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
                                 Rectangle brickRect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
 
-                                if (ballRect.intersects(brickRect)) {
+                                if (ballRect.intersects(brickRect) || laserRect.intersects(brickRect)) {
                                     map.setBrickValue(i, j);
                                     score += 5;
 
-                                    if (!ball.getFireBall()) {
+                                    if (!ball.getFireBall() && ballRect.intersects(brickRect)) {
                                         if (ball.getBallPosX() + 19 <= brickRect.x || ball.getBallPosX() + 1 >= brickRect.x + brickRect.width) {    // Moves ball away from intersected brick
                                             ball.setBallXdir(-ball.getBallXdir());
                                         } else {
                                             ball.setBallYdir(-ball.getBallYdir());
                                         }
+                                    }
+                                    if (laserRect.intersects(brickRect)) {
+                                        laserY = -50;
                                     }
 
                                     if (map.getBrickValue(i, j) <= 0) {
@@ -186,7 +204,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
                                     break A;    // Breaks out of outer loop
                                 }
-
                             }
                         }
                     }
@@ -224,30 +241,37 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 repaint();  // Repaints screen on any changes
             });
         } catch(Exception ConcurrentModificationException) {
-            System.out.println("Error");
+//            System.out.println("Error");
         }
     }
 
     @Override
-    public void keyTyped(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {
+
+    }
 
     @Override
-    public void keyReleased(KeyEvent e) {}
+    public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            holdingSpace = false;
+
+        }
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
         if (!gamePaused) { // Disabled player movement when game is paused
-            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                if (playerX >= 546 + (paddleWidth / 2)) {
-                    playerX = 546 + (paddleWidth / 2);
+            if (e.getKeyCode() == KeyEvent.VK_RIGHT && play) {
+                if (paddle.getPaddleX() >= 546 + (paddle.getWidth() / 2)) {
+                    paddle.setPaddleX(546 + (paddle.getWidth() / 2));
                 }
                 else {
                     moveRight();
                 }
             }
-            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                if (playerX <= 10) {
-                    playerX = 10;
+            if (e.getKeyCode() == KeyEvent.VK_LEFT && play) {
+                if (paddle.getPaddleX() <= 10) {
+                    paddle.setPaddleX(10);
                 }
                 else {
                     moveLeft();
@@ -256,7 +280,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         }
 
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-            System.out.println("Enter pressed. Play: " + play);
             if (!play) {
                 play = true;
                 startLevelPosition();
@@ -269,31 +292,32 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 gamePaused = !gamePaused;   //Toggle game paused
             }
         }
+
+        if (!holdingSpace && paddle.getLaser() && !laserFired) {
+            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                holdingSpace = true;
+                laserFired = true;
+                laserX = paddle.calcPaddleCenter();
+                laserY = paddle.getPaddleY();
+            }
+        }
     }
 
     public void moveRight() {
         play = true;
-        playerX += playerMovementSpeed;
+        paddle.setPaddleX(paddle.getPaddleX() + paddle.getMovementSpeed());
     }
 
     public void moveLeft() {
         play = true;
-        playerX -= playerMovementSpeed;
+        paddle.setPaddleX(paddle.getPaddleX() - paddle.getMovementSpeed());
     }
 
     public void startLevelPosition() {
         Ball.ballCount = 0;
         ballList.clear();
-        ballList.add(new Ball(250, 450, -2, -3));
-
-//        ballPosX = 250;
-//        ballPosY = 450;
-//        ballXdir = -2;
-//        ballYdir = -3;
-
-        playerX = 310;
-        playerMovementSpeed = 10;
-        paddleWidth = 100;
+        ballList.add(new Ball(250, 450, -1, -2));
+        paddle = new Paddle(310, 15, 100);
 
         powerUpListSize = powerUpList.size();
         if (powerUpListSize > 0 && !gamePaused ) {
@@ -306,15 +330,15 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     }
 
     public void deflectionAngle(Ball ball) {     // Deflection angle off the paddle
-        int paddleCenter = playerX + (paddleWidth /2);
-        int paddleTenths = paddleWidth / 10;
+        int paddleCenter = paddle.calcPaddleCenter();
+        int paddleTenths = paddle.getWidth() / 10;
 
         int directionX = 1;
         if (ball.getBallXdir() < 0) {
             directionX = -1;
         }
 
-        for (var i = 1; i <= 6; i++) {
+        for (var i = 1; i <= 5; i++) {
             int lowerLimit = paddleCenter - (paddleTenths * i);
             int upperLimit = paddleCenter + (paddleTenths * i);
 //            System.out.println("Lower: " + lowerLimit + " Higher: " + upperLimit);
@@ -344,10 +368,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     public void activatePowerUp(String powerUp) {
         switch (powerUp) {
             case "LP":  // Long Pad
-                paddleWidth = 150;
+                paddle.setWidth(150);
                 break;
             case "SP":  // Short Pad
-                paddleWidth = 50;
+                paddle.setWidth(50);
+                break;
+            case "NP":  // Normal Pad
+                paddle.setWidth(100);
                 break;
             case "QB":  // Quick Ball
                 ballList.forEach((ball) -> {
@@ -362,6 +389,16 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             case "SB":  // Slow Ball
                 ballList.forEach((ball) -> {
                     if (ball.getBallYdir() < 0) {
+                        ball.setBallYdir(-1);
+                    }
+                    else {
+                        ball.setBallYdir(1);
+                    }
+                });
+                break;
+            case "NB":  // Normal Ball
+                ballList.forEach((ball) -> {
+                    if (ball.getBallYdir() < 0) {
                         ball.setBallYdir(-2);
                     }
                     else {
@@ -371,8 +408,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 break;
             case "TB":  // Triple Ball
                 Ball ballToClone = ballList.get(0);
-                ballList.add(new Ball(ballToClone.getBallPosX(), ballToClone.getBallPosY(), -ballToClone.getBallXdir(), ballToClone.getBallYdir()));
-                ballList.add(new Ball(ballToClone.getBallPosX(), ballToClone.getBallPosY(), ballToClone.getBallXdir(), -ballToClone.getBallYdir()));
+                ballList.add(new Ball(ballToClone.getBallPosX(), ballToClone.getBallPosY(), -ballToClone.getBallXdir() -1, ballToClone.getBallYdir()));
+                ballList.add(new Ball(ballToClone.getBallPosX(), ballToClone.getBallPosY(), ballToClone.getBallXdir() + 1, -ballToClone.getBallYdir()));
                 break;
             case "FB":  // Fire Ball
                 for (Ball ball : ballList) {
@@ -382,6 +419,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                         break;
                     }
                 }
+                break;
+            case "LZ":  // Laser Paddle
+                paddle.setPaddleColor("Orange");
+                paddle.setLaser(true);
                 break;
             default:
                 break;

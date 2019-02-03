@@ -1,7 +1,7 @@
 # Brick Breaker Game
 
 ### Description : This is my first Java project using JFrame. I used the following tutorial https://www.youtube.com/watch?v=K9qMm3JbOH0 as a guide to start my project.
-## Original Features:
+## Original Features from tutorial:
 - Generate the bricks, ball, and paddle for the game
 - Ball collision detection with paddle and brick
 - Play again after winning and restart feature on losing
@@ -17,3 +17,4 @@
     - **SB** (Slow Ball) -  Slows down ball
     - **NB** (Normal Ball) - Resets ball speed
     - **TB** (Triple Ball) - Turns one ball into three
+    - **LZ** (Laser Paddle) - Paddle able to shoot a laser at bricks

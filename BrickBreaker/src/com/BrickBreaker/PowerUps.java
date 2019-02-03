@@ -11,7 +11,7 @@ public class PowerUps {
     }
 
     public void setPowerUpPosY() {
-        this.powerUpPosY += 2;
+        this.powerUpPosY += 1;
     }
 
     public int getPowerUpPosX() {

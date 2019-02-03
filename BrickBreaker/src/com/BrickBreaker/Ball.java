@@ -12,7 +12,7 @@ public class Ball {
         this.ballPosY = ballPosY;
         this.ballXdir = ballXdir;
         this.ballYdir = ballYdir;
-        this.ballColor = "Yellow";
+        this.ballColor = "White";
         ballCount += 1;
     }
 
