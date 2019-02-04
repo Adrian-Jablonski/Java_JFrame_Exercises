@@ -18,7 +18,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean play = false;
     private boolean gamePaused = false;
     private int score = 0;
-    private int totalBricks = 54;
+
+    private int mapRows = 5;
+    private int mapCol = 9;
+
+    private int totalBricks = mapRows * mapCol;
 
     private Timer timer;
     private int delay = 8;
@@ -37,7 +41,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
     public Gameplay() {
         startLevelPosition();
-        map = new MapGenerator(6, 9);
+        map = new MapGenerator(mapRows, mapCol);
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
@@ -62,7 +66,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         // scores
         g.setColor(Color.white);
         g.setFont(new Font("serif", Font.BOLD, 25));
-        g.drawString(""+score, 590, 30);
+        g.drawString("Score: "+score, 550, 30);
+
+        // lives
+        g.setColor(Color.white);
+        g.setFont(new Font("serif", Font.BOLD, 25));
+        g.drawString("Lives: "+paddle.getLives(), 50, 30);
 
         // the paddle
         if (paddle.getPaddleColor() == "Orange") {
@@ -89,15 +98,27 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                     ballList.remove(ball);
 
                     if (Ball.ballCount <= 0) {
+                        paddle.decreaseLives();
                         play = false;
                         ball.setBallXdir(0);
                         ball.setBallYdir(0);
-                        g.setColor(Color.red);
-                        g.setFont(new Font("serif", Font.BOLD, 30));
-                        g.drawString("Game Over, Score", 190, 300);
 
-                        g.setFont(new Font("serif", Font.BOLD, 20));
-                        g.drawString("Press Enter to Restart", 230, 350);
+                        if (paddle.getLives() <= 0) {
+                            g.setColor(Color.red);
+                            g.setFont(new Font("serif", Font.BOLD, 30));
+                            g.drawString("Game Over, Score", 190, 300);
+
+                            g.setFont(new Font("serif", Font.BOLD, 20));
+                            g.drawString("Press Enter to Restart", 230, 350);
+                        }
+                        else {
+                            g.setColor(Color.red);
+                            g.setFont(new Font("serif", Font.BOLD, 30));
+                            g.drawString(paddle.getLives() + " Live(s) Left", 190, 300);
+
+                            g.setFont(new Font("serif", Font.BOLD, 20));
+                            g.drawString("Press Enter to Continue", 230, 350);
+                        }
                     }
                 }
             });
@@ -143,7 +164,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         if (laserFired && !gamePaused && play) {
             g.setColor(Color.red);
             g.fillRect(laserX, laserY, 10, 10);
-            laserY -= 2;
+            laserY -= 6;
             if (laserY < 0) {
                 laserFired = false;
             }
@@ -212,7 +233,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                         for (int i = 0; i < powerUpListSize; i++) {
                             try {
                                 PowerUps powerUp = powerUpList.get(i);
-                                Rectangle powerUpRect = new Rectangle(powerUp.getPowerUpPosX(), powerUp.getPowerUpPosY(), 4, 16);
+                                Rectangle powerUpRect = new Rectangle(powerUp.getPowerUpPosX(), powerUp.getPowerUpPosY() - 5, 5, 20);
                                 if (powerUpRect.intersects(paddleRect) && play) {
                                     removePowerUp(i);
                                     activatePowerUp(powerUp.getPowerUpName());
@@ -262,8 +283,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     public void keyPressed(KeyEvent e) {
         if (!gamePaused) { // Disabled player movement when game is paused
             if (e.getKeyCode() == KeyEvent.VK_RIGHT && play) {
-                if (paddle.getPaddleX() >= 546 + (paddle.getWidth() / 2)) {
-                    paddle.setPaddleX(546 + (paddle.getWidth() / 2));
+                if (paddle.getPaddleX() >= 570 + (150 - paddle.getWidth())) {
+                    paddle.setPaddleX(570 + (150 - paddle.getWidth()));
                 }
                 else {
                     moveRight();
@@ -282,10 +303,16 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             if (!play) {
                 play = true;
-                startLevelPosition();
-                score = 0;
-                totalBricks = 54;
-                map = new MapGenerator(6, 9);
+                if (paddle.getLives() <= 0) {
+                    startLevelPosition();
+                    score = 0;
+                    totalBricks = mapRows * mapCol;
+                    map = new MapGenerator(mapRows, mapCol);
+                    paddle.resetLives();
+                }
+                else {
+                    startLevelPosition();
+                }
                 repaint();
             }
             else if (play) {
@@ -316,7 +343,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     public void startLevelPosition() {
         Ball.ballCount = 0;
         ballList.clear();
-        ballList.add(new Ball(250, 450, -1, -2));
+        ballList.add(new Ball(250, 450, -1, -3));
         paddle = new Paddle(310, 15, 100);
 
         powerUpListSize = powerUpList.size();
@@ -375,6 +402,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 break;
             case "NP":  // Normal Pad
                 paddle.setWidth(100);
+                paddle.setPaddleColor("Green");
+                paddle.setLaser(false);
                 break;
             case "QB":  // Quick Ball
                 ballList.forEach((ball) -> {
@@ -389,21 +418,23 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             case "SB":  // Slow Ball
                 ballList.forEach((ball) -> {
                     if (ball.getBallYdir() < 0) {
-                        ball.setBallYdir(-1);
+                        ball.setBallYdir(-2);
                     }
                     else {
-                        ball.setBallYdir(1);
+                        ball.setBallYdir(2);
                     }
                 });
                 break;
             case "NB":  // Normal Ball
                 ballList.forEach((ball) -> {
                     if (ball.getBallYdir() < 0) {
-                        ball.setBallYdir(-2);
+                        ball.setBallYdir(-3);
                     }
                     else {
-                        ball.setBallYdir(2);
+                        ball.setBallYdir(3);
                     }
+                    ball.setFireBall(false);
+                    ball.setBallColor("White");
                 });
                 break;
             case "TB":  // Triple Ball
@@ -423,6 +454,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             case "LZ":  // Laser Paddle
                 paddle.setPaddleColor("Orange");
                 paddle.setLaser(true);
+                break;
+            case "+1":  // Add a life
+                paddle.increaseLives();
                 break;
             default:
                 break;

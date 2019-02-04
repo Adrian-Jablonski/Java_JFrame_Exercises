@@ -9,6 +9,7 @@
 ## Additional Features I added
 - Added different paddle reflection angles based on where ball hit the paddle
 - Pause game
+- Lives
 - Power Ups
     - **LP** (Long Paddle) - Makes paddle larger
     - **SP** (Short Paddle) - Makes paddle smaller
@@ -18,3 +19,4 @@
     - **NB** (Normal Ball) - Resets ball speed
     - **TB** (Triple Ball) - Turns one ball into three
     - **LZ** (Laser Paddle) - Paddle able to shoot a laser at bricks
+    - **+1** (Add Life) - Adds a life

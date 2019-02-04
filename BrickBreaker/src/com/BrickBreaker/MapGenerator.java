@@ -52,8 +52,8 @@ public class MapGenerator {
     }
 
     public String[] shufflePowerUpArray(int row, int col) {
-//        String[] powerUps = {"None", "LP", "SP", "QB", "NP", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB", "None", "None"};
-        String[] powerUps = {"None", "TB", "TB", "LZ", "LZ"};
+        String[] powerUps = {"None", "LP", "SP", "QB", "NP", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB", "None", "None", "LZ", "NB", "NB", "NP", "NP", "None", "+1"};
+//        String[] powerUps = {"None", "TB", "TB", "LZ", "LZ", "+1", "+1"};
 
         int powerUpsLen = powerUps.length;
         int powerUpArrayLen = row * col;
@@ -61,6 +61,11 @@ public class MapGenerator {
         for (int i = 0; i < powerUpArrayLen; i++) {
             int random = (int)(Math.random() * powerUpsLen);
             powerUpArray[i] = powerUps[random];
+            if (powerUps[random] == "+1") {
+                System.out.println("+1 Inserted");
+                powerUps[random] = "None";
+            }
+
         }
         return powerUpArray;
     }

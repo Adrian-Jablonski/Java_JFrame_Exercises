@@ -5,6 +5,8 @@ public class Paddle {
     private String paddleColor;
     private boolean laser;
 
+    private static int lives = 3;
+
     public Paddle(int paddleX, int movementSpeed, int width) {
         this.paddleX = paddleX;
         this.movementSpeed = movementSpeed;
@@ -43,5 +45,20 @@ public class Paddle {
 
     public int calcPaddleCenter() {
         return this.getPaddleX() + (this.getWidth() /2);
+    }
+
+    public void decreaseLives() {
+        lives -= 1;
+    }
+    public void increaseLives() {
+        lives += 1;
+    }
+
+    public void resetLives() {
+        lives = 3;
+    }
+
+    public int getLives() {
+        return lives;
     }
 }
