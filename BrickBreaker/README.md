@@ -20,3 +20,5 @@
     - **TB** (Triple Ball) - Turns one ball into three
     - **LZ** (Laser Paddle) - Paddle able to shoot a laser at bricks
     - **+1** (Add Life) - Adds a life
+- Added unique levels
+- Added solid bricks that can't be destroyed

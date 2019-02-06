@@ -58,7 +58,7 @@ public class MapGenerator {
 
     public int getRows() {return this.row;}
     public int getCols() {return this.col;}
-    public int getTotalBricks() {return this.row * this.col;}
+    public int getTotalBricks() {return (this.row * this.col) - level.getBrickAdjustment();}
 
     public String[] shufflePowerUpArray(int row, int col) {
 //        String[] powerUps = {"None", "LP", "SP", "QB", "NP", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB", "None", "None", "LZ", "NB", "NB", "NP", "NP", "None", "+1", "FB"};

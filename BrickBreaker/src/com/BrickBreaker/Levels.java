@@ -1,8 +1,9 @@
 package com.BrickBreaker;
 
 public class Levels {
-    public int map[][];
-    public int row, col;
+    private int map[][];
+    private int row, col;
+    private int brickAdjustment = 0;    // brick adjustment for solid bricks
 
     public Levels() {
     }
@@ -18,7 +19,12 @@ public class Levels {
         return this.col;
     }
 
+    public int getBrickAdjustment() {
+        return this.brickAdjustment;
+    }
+
     public void mapLevel(int currentLevel) {
+        brickAdjustment = 0;
         switch (currentLevel) {
             case 1:
                 level1();
@@ -69,6 +75,7 @@ public class Levels {
     }
 
     public int solidBrick() {   // unbreakable brick
+        brickAdjustment += 1;
         return 100;
     }
 }

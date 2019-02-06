@@ -264,11 +264,14 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                         ball.setBallPosX(ball.getBallPosX() + ball.getBallXdir());
                         ball.setBallPosY(ball.getBallPosY() + ball.getBallYdir());
                     }
-                    if (ball.getBallPosX() < 0 || ball.getBallPosX() > 670) {     // Left border Or Right Border
-                        ball.setBallXdir(-ball.getBallXdir());
+                    if (ball.getBallPosX() < 0) {     // Left border
+                        ball.setBallXdir(Math.abs(ball.getBallXdir())); // Math.abs Prevents ball screen edge bug
                     }
                     if (ball.getBallPosY() < 0) {     // Top Border
                         ball.setBallYdir(-ball.getBallYdir());
+                    }
+                    if ( ball.getBallPosX() > 670) {    // Right Border
+                        ball.setBallXdir(-Math.abs(ball.getBallXdir()));  // Math.abs Prevents ball screen edge bug
                     }
                 }
                 repaint();  // Repaints screen on any changes
