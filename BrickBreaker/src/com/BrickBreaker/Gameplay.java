@@ -19,10 +19,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean gamePaused = false;
     private int score = 0;
 
-    private int mapRows = 5;
-    private int mapCol = 9;
+    private int mapRows;
+    private int mapCol;
 
-    private int totalBricks = mapRows * mapCol;
+    private int totalBricks;
 
     private Timer timer;
     private int delay = 8;
@@ -41,7 +41,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
     public Gameplay() {
         startLevelPosition();
-        map = new MapGenerator(mapRows, mapCol);
+        map = new MapGenerator();
+        mapRows = map.getRows();
+        mapCol = map.getCols();
+        totalBricks = map.getTotalBricks();
+
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
@@ -72,6 +76,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         g.setColor(Color.white);
         g.setFont(new Font("serif", Font.BOLD, 25));
         g.drawString("Lives: "+paddle.getLives(), 50, 30);
+
+        // level
+        g.setColor(Color.white);
+        g.setFont(new Font("serif", Font.BOLD, 25));
+        g.drawString("Level: "+map.currentLevel, 300, 30);
 
         // the paddle
         if (paddle.getPaddleColor() == "Orange") {
@@ -131,10 +140,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             play = false;
             g.setColor(Color.red);
             g.setFont(new Font("serif", Font.BOLD, 30));
-            g.drawString("You Won: " + score, 260, 300);
+            g.drawString("Level " + map.currentLevel + " Complete", 260, 300);
 
             g.setFont(new Font("serif", Font.BOLD, 20));
-            g.drawString("Press Enter to Restart", 230, 350);
+            g.drawString("Press Enter to Start Level " + (map.currentLevel + 1), 230, 350);
         }
 
         if (gamePaused) {
@@ -201,10 +210,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                                 Rectangle brickRect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
 
                                 if (ballRect.intersects(brickRect) || laserRect.intersects(brickRect)) {
-                                    map.setBrickValue(i, j);
-                                    score += 5;
+                                    boolean unbreakableBrick = map.getBrickValue(i, j) == 100;
+                                    if (!unbreakableBrick) {
+                                        map.setBrickValue(i, j);
+                                        score += 5;
+                                    }
 
-                                    if (!ball.getFireBall() && ballRect.intersects(brickRect)) {
+                                    if ((!ball.getFireBall() && ballRect.intersects(brickRect)) || (ball.getFireBall() && unbreakableBrick)){
                                         if (ball.getBallPosX() + 19 <= brickRect.x || ball.getBallPosX() + 1 >= brickRect.x + brickRect.width) {    // Moves ball away from intersected brick
                                             ball.setBallXdir(-ball.getBallXdir());
                                         } else {
@@ -303,12 +315,19 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             if (!play) {
                 play = true;
-                if (paddle.getLives() <= 0) {
+                if (paddle.getLives() <= 0 || totalBricks <= 0) {
                     startLevelPosition();
-                    score = 0;
                     totalBricks = mapRows * mapCol;
-                    map = new MapGenerator(mapRows, mapCol);
-                    paddle.resetLives();
+
+                    map.currentLevel += 1;
+                    map = new MapGenerator();
+                    mapRows = map.getRows();
+                    mapCol = map.getCols();
+                    totalBricks = map.getTotalBricks();
+                    if (paddle.getLives() <= 0) {
+                        score = 0;
+                        paddle.resetLives();
+                    }
                 }
                 else {
                     startLevelPosition();
@@ -369,7 +388,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             int lowerLimit = paddleCenter - (paddleTenths * i);
             int upperLimit = paddleCenter + (paddleTenths * i);
 //            System.out.println("Lower: " + lowerLimit + " Higher: " + upperLimit);
-            if (i >= 4) {
+            if (i >= 3) {
                 if (ball.getBallPosX() >= lowerLimit && ball.getBallPosX() <= paddleCenter) {
                     ball.setBallXdir(-1 * (i - 1));
                     break;
@@ -380,7 +399,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 }
             }
 
-            if (ball.getBallPosX() >= lowerLimit && ball.getBallPosX() <= upperLimit) {
+            if (ball.getBallPosX() >= lowerLimit  && ball.getBallPosX() <= upperLimit) {
                 ball.setBallXdir(directionX * (i - 1));
                 break;
             }

@@ -10,19 +10,19 @@ public class MapGenerator {
     public int brickHeight;
     public String[] powerUpArray;
     public int row, col;
+    static int currentLevel = 1;
 
-    public MapGenerator(int row, int col) {
-        this.row = row;
-        this.col = col;
+    Levels level = new Levels();
+
+    public MapGenerator() {
+        level.mapLevel(currentLevel);
+        this.row = level.getRow();
+        this.col = level.getCol();
+
         powerUpArray = new String[row * col];
         powerUpArray = shufflePowerUpArray(row, col);
 
-        map = new int[row][col];
-        for (int i = 0; i < map.length; i++) {
-            for(int j = 0; j < map[0].length; j++) {
-                map[i][j] = 1;  // One will detect that the brick has not been intersected with the ball. Change position to 0 if a brick should not be drawn
-            }
-        }
+        map = level.getMap();
 
         brickWidth = 75;
         brickHeight = 25;
@@ -32,7 +32,12 @@ public class MapGenerator {
         for (int i = 0; i < map.length; i++) {
             for(int j = 0; j < map[0].length; j++) {
                 if (map[i][j] > 0) {
-                    g.setColor(Color.red);
+                    if (map[i][j] == 100) {
+                        g.setColor(Color.gray);
+                    }
+                    else {
+                        g.setColor(Color.red);
+                    }
                     g.fillRect(j * brickWidth + 10, i * brickHeight + 50, brickWidth, brickHeight);
 
                     g.setStroke(new BasicStroke(3)); // Setting up a border
@@ -51,9 +56,13 @@ public class MapGenerator {
         return map[row][col];
     }
 
+    public int getRows() {return this.row;}
+    public int getCols() {return this.col;}
+    public int getTotalBricks() {return this.row * this.col;}
+
     public String[] shufflePowerUpArray(int row, int col) {
-        String[] powerUps = {"None", "LP", "SP", "QB", "NP", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB", "None", "None", "LZ", "NB", "NB", "NP", "NP", "None", "+1"};
-//        String[] powerUps = {"None", "TB", "TB", "LZ", "LZ", "+1", "+1"};
+//        String[] powerUps = {"None", "LP", "SP", "QB", "NP", "None", "None", "SB", "None", "None", "None", "None", "QB", "SP", "None", "None", "None", "None", "TB", "None", "None", "LZ", "NB", "NB", "NP", "NP", "None", "+1", "FB"};
+        String[] powerUps = {"FB", "FB", "LZ"};
 
         int powerUpsLen = powerUps.length;
         int powerUpArrayLen = row * col;
