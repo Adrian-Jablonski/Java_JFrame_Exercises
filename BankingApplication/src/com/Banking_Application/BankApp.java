@@ -7,7 +7,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class BankApp extends javax.swing.JFrame{
     private JPanel panel1;
@@ -19,6 +21,7 @@ public class BankApp extends javax.swing.JFrame{
     private JButton withdrawButton;
     private JButton depositButton;
     private JTextField customerBalance;
+    private JButton newAccount;
 
     ArrayList<Account> accounts = Utility.readFile("accounts.txt");
     Account currentAccount;
@@ -73,7 +76,7 @@ public class BankApp extends javax.swing.JFrame{
         transferButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String accountNumber = JOptionPane.showInputDialog(null, "Enter account to transfer to: ", "Withdrawal", JOptionPane.PLAIN_MESSAGE);
+                String accountNumber = JOptionPane.showInputDialog(null, "Enter account to transfer to: ", "Transfer", JOptionPane.PLAIN_MESSAGE);
                 String amountString = JOptionPane.showInputDialog(null, "Enter the amount to transfer to account " + accountNumber + ": ", "Withdrawal", JOptionPane.PLAIN_MESSAGE);
                 double amount = Double.parseDouble(amountString);
                 Account transferAccount = null;
@@ -91,6 +94,25 @@ public class BankApp extends javax.swing.JFrame{
                 }
             }
         });
+
+        newAccount.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String customerName = JOptionPane.showInputDialog(null, "Enter customer first and last name: ", "New Account", JOptionPane.PLAIN_MESSAGE);
+                String today = new SimpleDateFormat("yyyy/MM/dd").format(Calendar.getInstance().getTime());
+                Account acc = new Account(currentAccount.nextAccountNumber(), customerName, today, 0);
+                accounts.add(acc);
+                accountDropdown.addItem(acc);
+                accountDropdown.setSelectedItem(acc);      // Selects new account in dropdown
+                Utility.writeFile(accounts, "accounts.txt");
+            }
+        });
+
+        //TODO: Don't allow user to withdraw more money than in account
+        //TODO: Make sure deposit and withdraw amounts are numbers
+        //TODO: Validate that account to transfer to is valid
+        //TODO: Handle cancel buttons
+        //TODO: Delete an account
     }
 
     public void setFields(Account currentAccount) {
